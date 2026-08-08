@@ -1,0 +1,144 @@
+:root {
+  --bg: #0a0e0c;
+  --panel: #0f1613;
+  --fg: #c8f7dc;
+  --fg-dim: #6f9c86;
+  --accent: #58e6a6;
+  --warn: #e6b458;
+  --danger: #e65858;
+  --border: #234034;
+  font-size: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "IBM Plex Mono", "Courier New", ui-monospace, monospace;
+  min-height: 100%;
+}
+
+#app {
+  max-width: 860px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+#topbar, #statusbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--fg-dim);
+  letter-spacing: 0.05em;
+}
+#statusbar { border-bottom: none; border-top: 1px solid var(--border); }
+
+#station-id { color: var(--accent); }
+
+.panel-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+#main-panel {
+  flex: 1;
+  padding: 1.25rem 1.25rem 2rem;
+  overflow-x: hidden;
+}
+
+.signal-header {
+  color: var(--fg-dim);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.signal-intro {
+  color: var(--fg-dim);
+  font-style: italic;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.arc-line {
+  border-left: 2px solid var(--accent);
+  padding: 0.5rem 0.8rem;
+  margin: 0.9rem 0;
+  color: var(--fg-dim);
+  background: var(--panel);
+}
+.arc-line::before {
+  content: "ARC — ";
+  color: var(--accent);
+}
+
+.blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.block {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  line-height: 1.55;
+  background: var(--panel);
+}
+.block.noise { color: var(--fg-dim); letter-spacing: 0.03em; }
+.block.nearmiss { color: var(--warn); }
+.block.resolved { color: var(--fg); }
+.block .clean-btn {
+  display: inline-block;
+  margin-top: 0.4rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+button {
+  font-family: inherit;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-radius: 2px;
+}
+button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button:disabled { opacity: 0.35; cursor: not-allowed; }
+button.primary { border-color: var(--accent); color: var(--accent); }
+button.small { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+
+.decode-pct { color: var(--fg-dim); font-size: 0.85rem; margin-top: 0.5rem; }
+
+.choice-block {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border);
+}
+.choice-prompt { margin-bottom: 0.7rem; color: var(--fg); }
+.choice-options { display: flex; flex-direction: column; gap: 0.5rem; }
+
+#statusbar #passes-indicator { color: var(--accent); }
