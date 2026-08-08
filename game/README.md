@@ -18,17 +18,21 @@ Progress autosaves to `localStorage` (single slot) after every choice. A reload 
 ## Structure
 
 - `src/engine.js` — pure game logic: the node-graph state machine (flags, gated option visibility, ending resolution including the delayed-consequence override). No DOM references; runs identically under Node and in the browser. This is what `test/archetypes.test.js` exercises headlessly.
-- `src/data.js` — all content: the eighteen non-terminal nodes (`NODES`), the seven terminal endings with their variant-text slots (`ENDINGS`, `VARIANTS`), the intro lines.
+- `src/data.js` — all content: the eleven choice nodes (`NODES` — every node ends in a decision, no read-only filler screens), the seven terminal endings with their variant-text slots (`ENDINGS`, `VARIANTS`), the intro lines.
 - `src/main.js` — rendering and event wiring: the typewriter-with-synthesized-blip renderer, title/story/ending phase transitions, save/load, choice buttons (click or number-key).
 - `style.css` — terminal aesthetic, single stylesheet, no preprocessor.
 
 ## Tests
 
 ```
-npm test                          # headless engine regression (no browser) — all 7 endings + gating rules
+npm test                          # headless engine regression (no browser) — all 7 endings, gating rules,
+                                   # and a brute-force check of all 16 reachable ending texts for clean
+                                   # assembly (no unresolved {{slot}}, no lowercase paragraph starts)
 node test/playthrough-all.mjs     # real browser — all 7 endings, driven by actual clicks on the rendered UI
 node test/edge-cases.mjs          # reload-mid-run persistence: resumes to the exact node, not a restart
 node test/new-run-check.mjs       # "play again" clears the save and returns to a clean title screen
+node test/audio-wiring.mjs        # confirms the typewriter blip actually fires (the other browser tests
+                                   # click to skip the animation, so this is the only one that lets it play)
 node test/live-smoke-test.mjs     # points at the deployed Pages URL, not localhost — run after any deploy
 ```
 
