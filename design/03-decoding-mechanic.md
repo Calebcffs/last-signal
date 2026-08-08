@@ -1,5 +1,7 @@
 # 03 — Decoding Mechanic Specification
 
+**Superseded — kept as historical record only.** The band/pass/lexicon mechanic described here was cut entirely after playtesting; see `08-branching-structure.md` for the branching-choice mechanic that replaced it. The canon, world, and cast this mechanic served (`01`, `02`) are still current.
+
 Resolves Whitepaper §14 Q5. This is the highest-priority document in the whole set: per the project's stated priority, the game must be *fun on its own mechanical terms*, independent of the narrative. Everything here is designed to satisfy one constraint from the advisor pass that exposed the original whitepaper's gap: **there must be a decision the player can get wrong, with a cost that is never a hard fail (§12: no softlocks), and that cost must feed the mystery, not just a score.**
 
 The chain: **wrong tool choice → lower decode % → specific words/clues missing → weaker theory support → worse-earned ending variant.** One system, not three bolted together.

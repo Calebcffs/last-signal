@@ -1,35 +1,32 @@
-import { chromium } from 'playwright-core';
+// Real-browser regression: "play again" on the ending screen clears the
+// save and returns to a clean title screen (no stale "resume" offer).
+import { launchPage, beginFromTitle, playToEnding } from './helpers.mjs';
 
-const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
-const page = await browser.newPage();
-const errors = [];
-page.on('pageerror', (e) => errors.push(e.message));
+const URL = 'http://localhost:8787/';
 
-await page.goto('http://localhost:8787/', { waitUntil: 'load' });
-await page.evaluate(() => {
-  const s = {
-    cycle: 16, clearance: 4, trust: 7, passesRemaining: null, blockState: [],
-    decodedArchive: { 1: { text: 'x', decodePercent: 100, blockState: [] } }, lexicon: {},
-    evidenceFlags: {}, choiceLog: {}, filingHistory: [], endingReached: null,
-  };
-  localStorage.setItem('last-signal-save-v1', JSON.stringify(s));
-});
-await page.reload({ waitUntil: 'load' });
-await page.waitForSelector('#new-run');
-await page.click('#new-run');
-await page.waitForTimeout(100);
+const { browser, page, errors } = await launchPage(URL);
+await beginFromTitle(page);
+await playToEnding(page, ['[2]', '[1]', '[1]', '[1]', '[3]', '[1]']); // kept faith, fastest deferential path
 
-const titleVisible = await page.locator('#begin-btn').count();
-console.log('title screen shown after new-run click:', titleVisible > 0 ? 'yes' : 'NO');
+await page.locator('.plain-btn', { hasText: 'play again' }).click();
+await page.waitForSelector('.title-name', { timeout: 10000 });
+const promptText = await page.textContent('.title-prompt');
+if (promptText.includes('resume')) {
+  console.log('FAIL: title screen still offers resume after "play again". Saw:', promptText);
+  process.exit(1);
+}
+if (!promptText.toLowerCase().includes('begin')) {
+  console.log('FAIL: expected a clean "begin" prompt, saw:', promptText);
+  process.exit(1);
+}
+console.log('ok   "play again" clears save and returns to a clean title screen:', promptText.trim());
 
-const saveAfter = await page.evaluate(() => localStorage.getItem('last-signal-save-v1'));
-console.log('save cleared:', saveAfter === null ? 'yes' : 'NO (' + saveAfter + ')');
+const realErrors = errors.filter((e) => !e.includes('favicon'));
+if (realErrors.length) {
+  console.log('FAIL: console/page errors:', JSON.stringify(realErrors));
+  process.exit(1);
+}
+console.log('ok   zero console errors');
 
-// Now begin again and confirm Signal 1 shows fresh, not stale ending state
-await page.click('#begin-btn');
-await page.waitForSelector('#main-panel .block');
-const cycleText = await page.textContent('#cycle-indicator');
-console.log('cycle after new begin:', cycleText);
-
-console.log('page errors:', JSON.stringify(errors));
 await browser.close();
+console.log('\nNew-run check passed.');

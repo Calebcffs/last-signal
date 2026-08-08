@@ -1,161 +1,132 @@
-// Pure game logic. No DOM references — must run identically in a browser
-// <script type="module"> and under plain `node`. All functions are
-// state-in/state-out; nothing here reads localStorage or touches the page.
+// Pure game logic for the branching-narrative engine. No DOM references —
+// must run identically in a browser <script type="module"> and under plain
+// `node`. All functions are state-in/state-out; nothing here reads
+// localStorage or touches the page.
 
-export const TARGETED_CLEAN_COST = 2;
+import { NODES, START_NODE, ENDINGS, VARIANTS } from './data.js';
 
 export function createInitialState() {
-  return {
-    cycle: 1,
-    clearance: 1,
-    trust: 0,
-    passesRemaining: null, // set by startSignal
-    blockState: [],        // per-block: 'noise' | 'resolved' | 'nearmiss'
-    decodedArchive: {},    // signalId -> assembled revealed text (final, for archive/reread)
-    lexicon: {},           // symbolId -> { current: string|null, history: string[] }
-    evidenceFlags: {},     // flagName -> true
-    choiceLog: {},         // cpId -> optionKey
-    filingHistory: [],     // { atSignal, optionKey }
-    endingReached: null,
+  const state = {
+    nodeId: null,
+    flags: {
+      BOND: null,
+      PUSHED_BACK: false,
+      INVESTIGATION: 0,
+      RISK: false,
+      CHAIN_ALARMED: false,
+    },
+    ended: false,
+    endingId: null,
+    endingBaseChosen: null,
   };
-}
-
-export function startSignal(state, signal) {
-  state.passesRemaining = signal.passes;
-  state.blockState = signal.blocks.map(() => 'noise');
+  enterNode(state, START_NODE);
   return state;
 }
 
-// Applies one broad filter pass at `bandIndex` across every unresolved block.
-export function applyBand(state, signal, bandIndex) {
-  if (state.passesRemaining <= 0) return { ok: false, reason: 'no-passes' };
-  state.passesRemaining -= 1;
-  signal.blocks.forEach((block, i) => {
-    if (state.blockState[i] === 'resolved') return;
-    if (block.band === bandIndex) {
-      state.blockState[i] = 'resolved';
-      if (block.setsFlag) setFlag(state, block.setsFlag);
-    } else if (Math.abs(block.band - bandIndex) === 1) {
-      state.blockState[i] = 'nearmiss';
+function applySets(state, sets) {
+  for (const [key, val] of Object.entries(sets)) {
+    if (val === '+1') {
+      state.flags[key] = (state.flags[key] || 0) + 1;
+    } else {
+      state.flags[key] = val;
     }
-    // else stays 'noise'
-  });
-  return { ok: true };
+  }
 }
 
-// Forces one specific block to resolve correctly regardless of band accuracy.
-export function targetedClean(state, signal, blockIndex) {
-  if (state.passesRemaining < TARGETED_CLEAN_COST) return { ok: false, reason: 'no-passes' };
-  state.passesRemaining -= TARGETED_CLEAN_COST;
-  state.blockState[blockIndex] = 'resolved';
-  const block = signal.blocks[blockIndex];
-  if (block.setsFlag) setFlag(state, block.setsFlag);
-  return { ok: true };
+function enterNode(state, nodeId) {
+  state.nodeId = nodeId;
+  const node = NODES[nodeId];
+  if (node.sets) applySets(state, node.sets);
 }
 
-export function getDecodePercent(state, signal) {
-  const resolved = state.blockState.filter((s) => s === 'resolved').length;
-  return Math.round((resolved / signal.blocks.length) * 100);
+export function getCurrentNode(state) {
+  if (state.ended) return null;
+  return NODES[state.nodeId];
 }
-
-export function finalizeSignal(state, signal) {
-  const text = signal.blocks
-    .map((block, i) => {
-      if (state.blockState[i] === 'resolved') return block.text;
-      if (state.blockState[i] === 'nearmiss') return block.nearMiss || '[garbled — near-miss band]';
-      return '[UNRESOLVED]';
-    })
-    .join(' ');
-  state.decodedArchive[signal.id] = {
-    text,
-    decodePercent: getDecodePercent(state, signal),
-    blockState: [...state.blockState],
-  };
-  return state;
-}
-
-// --- Lexicon ---------------------------------------------------------------
-
-export function commitLexicon(state, symbolId, guess, cycle) {
-  const trimmed = (guess || '').trim().slice(0, 60);
-  if (!trimmed) return { ok: false, reason: 'empty' };
-  state.lexicon[symbolId] = { current: trimmed, history: [] };
-  return { ok: true };
-}
-
-export function reviseLexicon(state, symbolId, newGuess, cycle) {
-  const trimmed = (newGuess || '').trim().slice(0, 60);
-  if (!trimmed) return { ok: false, reason: 'empty' };
-  const entry = state.lexicon[symbolId];
-  if (!entry) return commitLexicon(state, symbolId, newGuess, cycle);
-  entry.history.push(entry.current);
-  entry.current = trimmed;
-  return { ok: true };
-}
-
-// --- Evidence flags ----------------------------------------------------------
-
-export function setFlag(state, flagName) {
-  state.evidenceFlags[flagName] = true;
-  return state;
-}
-
-export function hasFlag(state, flagName) {
-  return !!state.evidenceFlags[flagName];
-}
-
-// --- Choice points -----------------------------------------------------------
 
 export function isOptionAvailable(state, option) {
-  if (option.requiresFlag && !hasFlag(state, option.requiresFlag)) return false;
-  if (option.requiresAnyFlag && !option.requiresAnyFlag.some((f) => hasFlag(state, f))) return false;
-  if (option.requiresPasses && (state.passesRemaining ?? 0) < option.requiresPasses) return false;
-  if (option.requiresTrust !== undefined && state.trust < option.requiresTrust) return false;
+  if (!option.requires) return true;
+  for (const [key, val] of Object.entries(option.requires)) {
+    if (key === 'INVESTIGATION_MIN') {
+      if (state.flags.INVESTIGATION < val) return false;
+    } else if (state.flags[key] !== val) {
+      return false;
+    }
+  }
   return true;
 }
 
-export function makeChoice(state, choicePoint, optionKey) {
-  const option = choicePoint.options.find((o) => o.key === optionKey);
-  if (!option) return { ok: false, reason: 'no-such-option' };
-  if (!isOptionAvailable(state, option)) return { ok: false, reason: 'not-available' };
-  state.trust += option.delta;
-  state.choiceLog[choicePoint.id] = optionKey;
-  return { ok: true, delta: option.delta };
+export function getAvailableOptions(state) {
+  const node = getCurrentNode(state);
+  if (!node || node.kind !== 'choice') return [];
+  return node.options.filter((opt) => isOptionAvailable(state, opt));
 }
 
-// --- Ending --------------------------------------------------------------
-
-// Ending is determined by the actual CP6 filing clause, not a trust
-// threshold — the epilogue text narrates a specific filing, so what's shown
-// must match what was actually filed (design/01-canon-and-endings.md §6,
-// corrected during implementation testing: a pure trust-threshold scheme let
-// a player reach the "Full Disclosure" epilogue via CP1-CP5 alone while
-// having filed only a hedge at CP6, which the text then contradicted).
-// Trust still matters — it's CP1-CP5's accumulated score, and CP6's hedge/
-// truth clauses require both the relevant evidence flag AND a trust
-// threshold (see CP6's options in data.js), so CP1-CP5 aren't inert; they
-// gate what you're able to file, and the filing itself decides the ending.
-export function computeEnding(cp6Choice) {
-  if (cp6Choice === 'truth') return 'A';
-  if (cp6Choice === 'comforting') return 'B';
-  return 'C'; // 'hedge', or (should not happen in practice) no CP6 choice logged
+export function isChoicePending(state) {
+  const node = getCurrentNode(state);
+  return !!node && node.kind === 'choice';
 }
 
-export function finalizeEnding(state) {
-  state.endingReached = computeEnding(state.choiceLog['CP6']);
+export function isBeatPending(state) {
+  const node = getCurrentNode(state);
+  return !!node && node.kind === 'beat';
+}
+
+export function computeEndingId(baseEndingKey, flags) {
+  return flags.CHAIN_ALARMED ? 'T6' : baseEndingKey;
+}
+
+export function choose(state, optionKey) {
+  const node = getCurrentNode(state);
+  if (!node || node.kind !== 'choice') return state;
+  const option = node.options.find((o) => o.key === optionKey);
+  if (!option || !isOptionAvailable(state, option)) return state;
+
+  if (option.sets) applySets(state, option.sets);
+
+  if (option.next) {
+    enterNode(state, option.next);
+  } else if (option.endingBase) {
+    state.endingBaseChosen = option.endingBase;
+    state.endingId = computeEndingId(option.endingBase, state.flags);
+    state.ended = true;
+    state.nodeId = null;
+  }
   return state;
 }
 
-// --- Cycle progression -----------------------------------------------------
-
-export function advanceCycle(state) {
-  state.cycle += 1;
-  state.passesRemaining = null;
-  state.blockState = [];
+export function advance(state) {
+  const node = getCurrentNode(state);
+  if (!node || node.kind !== 'beat') return state;
+  enterNode(state, node.next);
   return state;
 }
 
-export function isChoicePending(state, choicePoint) {
-  if (!choicePoint) return false;
-  return state.choiceLog[choicePoint.id] === undefined;
+export function resolveVariants(flags) {
+  const bond = flags.BOND || 'clinical';
+  let cost;
+  if (flags.RISK) cost = 'costly';
+  else if (flags.PUSHED_BACK && flags.INVESTIGATION >= 2) cost = 'isolated';
+  else cost = 'trusted';
+  const proof = flags.INVESTIGATION >= 1 ? 'commit' : 'arithmetic';
+  return { bond, cost, proof };
+}
+
+export function getEnding(state) {
+  if (!state.ended || !state.endingId) return null;
+  const endingId = state.endingId;
+  const ending = ENDINGS[endingId];
+  const v = resolveVariants(state.flags);
+  const lines = ending.body.map((line) =>
+    line
+      .replace('{{bond}}', VARIANTS.bond[v.bond][endingId] || '')
+      .replace('{{cost}}', VARIANTS.cost[v.cost][endingId] || '')
+      .replace('{{proof}}', VARIANTS.proof[v.proof][endingId] || '')
+  );
+  return {
+    id: endingId,
+    title: ending.title,
+    lines,
+    overridden: state.endingBaseChosen && state.endingBaseChosen !== endingId,
+  };
 }

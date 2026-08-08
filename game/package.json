@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "LAST SIGNAL — text/UI narrative puzzle game",
+  "description": "LAST SIGNAL — branching-choice narrative game",
   "scripts": {
     "test": "node test/archetypes.test.js",
     "serve": "python3 -m http.server 8787"

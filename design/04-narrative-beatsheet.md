@@ -1,5 +1,7 @@
 # 04 — Narrative Structure and Beat Sheet
 
+**Superseded — kept as historical record only.** The 16-signal structure and CP1–CP6 trust-score scheme below were replaced by the branching node graph in `08-branching-structure.md` after playtesting showed the puzzle-gated pacing wasn't landing. Signal 1 and Signal 6's prose (`07-signal-drafts.md`) were reused near-verbatim in the new build's `A1`/`A3` nodes.
+
 Full act/cycle breakdown for all 16 signals (15 decoded transmissions + 1 closing filing scene), within the 12-20 signal budget (Whitepaper §11). Each entry is a planning summary, not final prose — final transmission text gets written *against* `05-clue-ledger.md`, per the advisor-recommended ordering, not before it.
 
 **Day-counter convention:** genuine Earth signals carry a running day-count ("day N since last resupply") that advances at a fixed, physically-plausible rate. This is the single cheapest, most reusable checkable fact in the game (Whitepaper §12) — one recurring number, planted early, that later signals can get subtly wrong. Established baseline: day 118 (Signal 1) → day 140 (Signal 6, last genuine).

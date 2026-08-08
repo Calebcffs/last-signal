@@ -1,524 +1,324 @@
-// Static content: signals, choice points, lexicon flow, endings.
-// Pure data — no functions besides small literal predicates consumed by engine.js.
-// Signal content sourced from ../design/07-signal-drafts.md and ../design/04-narrative-beatsheet.md.
+// LAST SIGNAL — branching narrative content.
+// One node graph: 'beat' nodes are read-only (transmission + auto-advance),
+// 'choice' nodes end in a real decision. Terminal endings are assembled from
+// a base template plus three independently-derived variant slots (bond/cost/proof).
 
-// Waveform hint legend (design/03-decoding-mechanic.md §2): each block's true
-// band has a consistent, truthful qualitative descriptor, taught in Signal 1's
-// intro and shown on every unresolved block thereafter. This is what makes
-// band selection a real skill (learn the mapping, read it correctly) rather
-// than either a coin-flip or a free sweep — reliable throughout, per the
-// tutorial-register promise in Whitepaper §8; it is NOT what makes signals
-// hard to trust, that's the content, not the mechanic.
-export const HINT_LEGEND = {
-  0: 'flat, steady tone',
-  1: 'sharp, repeating pulse',
-  2: 'irregular, broad static',
-};
+export const TITLE = 'LAST SIGNAL';
 
-// Passes are deliberately tight — usually equal to the number of distinct
-// bands actually used in that signal, so a blind full sweep costs the whole
-// budget (or more than it) rather than leaving slack. This is the fix for a
-// real bug caught in testing: with generous passes and only two bands ever
-// used, "click band 0, then band 1, every signal" decoded everything for
-// free, which made evidence-gating (and therefore ending selection)
-// bypassable. See design/06-fair-play-audit.md for the writeup once ported.
-
-export const SIGNALS = [
-  {
-    id: 1,
-    act: 1,
-    source: 'genuine',
-    day: 118,
-    bands: 3,
-    passes: 3,
-    intro: '1... 1... 2... 3... 5... 8... 13... — parity check, parity check, this is Keel Ridge relay repeating, do you copy — [tuning note: flat/steady tone reads as band 0, a sharp repeating pulse as band 1, irregular broad static as band 2 — that pattern holds for the rest of the mission]',
-    arcPre: 'ARC: New transmission, first of the cycle. Band alignment looks straightforward — I\'ll leave the filtering to you.',
-    arcPost: 'ARC: Logged and archived. Nothing else queued this cycle.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: 'ration levels nominal, crew count steady.',
-        band: 0,
-        loadBearing: false,
-        nearMiss: 'ra..n l-vels n...nal, cr-w c..nt st..dy (garbled)',
-      },
-      {
-        text: "Keel Ridge greenhouse intake short four trays this cycle — Mara says the seedlings started tilting toward the grow-lights a full day early, some kind of ozone flicker in the backup array, nothing the primary can't cover. day 118 since last resupply.",
-        band: 1,
-        loadBearing: true,
-        nearMiss: '...Ridge greenh--se... something about trays... [signal too degraded on this band]',
-      },
-      {
-        text: "if this reaches anyone: we're still here, still counting, still growing things on purpose.",
-        band: 0,
-        loadBearing: false,
-        nearMiss: '..f th-s r--ches anyone... [partial, unclear]',
-      },
-    ],
-  },
-
-  {
-    id: 6,
-    act: 2,
-    source: 'genuine',
-    day: 140,
-    bands: 3,
-    passes: 3,
-    intro: '...ration levels holding.',
-    arcPre: 'ARC: Weak carrier, but present. Filtering as usual.',
-    arcPost: 'ARC: Carrier lost partway through — solar interference is the likely cause. Logged as a routine gap unless you flag it otherwise.',
-    endMarker: '[CARRIER LOST]',
-    blocks: [
-      {
-        text: "tell Mara we're still four trays short on the greenhouse intake, tell her the backup array's holding but nobody's fixed it yet.",
-        band: 1,
-        loadBearing: true,
-        nearMiss: '...tell Mara... something about the array... [signal too degraded on this band]',
-      },
-      {
-        text: '[CORRUPTED]',
-        band: 2,
-        loadBearing: false,
-        nearMiss: '[CORRUPTED]',
-      },
-      {
-        text: 'still counting the days by hand — system stopped syncing three cycles back, so call it day one-forty, give or take.',
-        band: 1,
-        loadBearing: true,
-        nearMiss: '...counting the days... system stopped... [signal too degraded on this band]',
-      },
-      {
-        text: 'if anyone is listening, we are still here, we are still—',
-        band: 0,
-        loadBearing: false,
-        nearMiss: '..f anyone is list-ning... [partial, unclear]',
-      },
-    ],
-  },
-
-  {
-    id: 2,
-    act: 1,
-    source: 'genuine',
-    day: 122,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED — Keel Ridge relay, steady]',
-    arcPre: 'ARC: Routine cycle. One item worth your attention: an unfamiliar tag in the manifest data.',
-    arcPost: 'ARC: Logged. The tag stays flagged unresolved until you commit a reading for it.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    requiresLexiconCommit: 'sym_kr7',
-    lexiconPromptLabel: 'What do you make of ⟦KR-7⟧?',
-    blocks: [
-      {
-        text: "greenhouse intake still four trays short — no change since last cycle, backup array still carrying the load.",
-        band: 0,
-        loadBearing: false,
-        nearMiss: 'greenh--se int-ke... no ch-nge... [garbled]',
-      },
-      {
-        text: "maintenance flag on this cycle's manifest: a tag reading ⟦KR-7⟧, cross-referenced against the backup array fault from last cycle. no further context given in this transmission.",
-        band: 1,
-        loadBearing: true,
-        nearMiss: '...manifest flag... ⟦KR-7⟧... [signal too degraded on this band]',
-        symbol: 'sym_kr7',
-      },
-    ],
-  },
-  {
-    id: 3,
-    act: 1,
-    source: 'genuine',
-    day: 125,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED — Keel Ridge relay, steady]',
-    arcPre: 'ARC: A correction came through on last cycle\'s manifest tag.',
-    arcPost: 'ARC: Lexicon entry updated. Good catch keeping that current.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    requiresLexiconRevision: 'sym_kr7',
-    lexiconPromptLabel: 'Revise your reading of ⟦KR-7⟧ — it\'s definitely not what you thought:',
-    blocks: [
-      {
-        text: "correction to the manifest: ⟦KR-7⟧ was mis-attached to the array fault. it isn't a part code — it's this post's prior operator designation, filed before handover, unrelated to the fault report.",
-        band: 1,
-        loadBearing: true,
-        nearMiss: '...correction to the manifest... ⟦KR-7⟧... [signal too degraded on this band]',
-        symbol: 'sym_kr7',
-      },
-      {
-        text: "greenhouse intake unchanged — still short, still on the backup array.",
-        band: 0,
-        loadBearing: false,
-        nearMiss: 'greenh--se... st-ll sh-rt... [garbled]',
-      },
-    ],
-  },
-  {
-    id: 4,
-    act: 1,
-    source: 'genuine',
-    day: 132,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED — Keel Ridge relay, faint]',
-    arcPre: 'ARC: Weaker than usual. Filtering as normal.',
-    arcPost: 'ARC: Logged. Nothing else queued this cycle.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: "supply margins tightening — the four-tray shortfall still hasn't closed, and now the secondary tank's reading low too. nothing critical yet, but it's not nothing.",
-        band: 1,
-        loadBearing: false,
-        nearMiss: '...m-rgins t-ghtening... [signal too degraded on this band]',
-      },
-    ],
-  },
-  {
-    id: 5,
-    act: 2,
-    source: 'genuine',
-    day: 137,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED — Keel Ridge relay, degraded]',
-    arcPre: 'ARC: Heavy noise this cycle. Reception, not content — nothing to worry about there.',
-    arcPost: 'ARC: Logged, partial. Nothing else queued.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: "[static] ...still rationing... [long static] ...backup array holding, for now... [static] ...tank's still low...",
-        band: 2,
-        loadBearing: false,
-        nearMiss: '[mostly static, nothing recoverable on this band]',
-      },
-    ],
-  },
-
-  {
-    id: 7,
-    act: 2,
-    source: 'fabricated',
-    day: 144,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED — eleven hours after queue]',
-    arcPre: 'ARC: Faster turnaround than usual this cycle. Good reception, nothing more.',
-    arcPost: 'ARC: Logged and archived.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: "tell Mara the light's better this time of year — she always says that, every cycle it comes back around.",
-        band: 0,
-        loadBearing: false,
-        nearMiss: '...tell Mara... [garbled]',
-      },
-      {
-        text: "carrier acquired only eleven hours after queue — for a source this distance out, that's faster than the last six cycles combined.",
-        band: 1,
-        loadBearing: true,
-        nearMiss: '...eleven hours after queue... [signal too degraded on this band]',
-        setsFlag: 'sig7_timing_checked',
-      },
-    ],
-  },
-  {
-    id: 8,
-    act: 2,
-    source: 'fabricated',
-    day: 148,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED]',
-    arcPre: 'ARC: Filing window is open once you\'ve logged this cycle.',
-    arcPost: 'ARC: Logged. Ready to file when you are.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: "ration levels holding, nothing new to report this cycle.",
-        band: 0,
-        loadBearing: false,
-        nearMiss: 'r-tion l-vels... [garbled]',
-      },
-    ],
-  },
-  {
-    id: 9,
-    act: 2,
-    source: 'fabricated',
-    day: 151,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED]',
-    arcPre: 'ARC: Clean reception this cycle.',
-    arcPost: 'ARC: Logged and archived.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: "greenhouse intake back to full — the shortfall closed out last cycle, no further action needed.",
-        band: 1,
-        loadBearing: true,
-        nearMiss: '...greenh--se int-ke back to... [signal too degraded on this band]',
-        setsFlag: 'sig9_contradiction_checked',
-      },
-      {
-        text: "we are counting our blessings, so to speak, and the days along with them.",
-        band: 2,
-        loadBearing: false,
-        nearMiss: '...c-unting our bl-ssings... [garbled]',
-      },
-    ],
-  },
-  {
-    id: 10,
-    act: 2,
-    source: 'fabricated',
-    day: 155,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED — static-heavy]',
-    arcPre: 'ARC: One segment came through ambiguous. I\'ve got a probable reading if you want it.',
-    arcPost: 'ARC: Logged either way — your call on the reading noted.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: "supply notes: tray shortfall status unclear from the raw decode this cycle — static-heavy segment.",
-        band: 2,
-        loadBearing: false,
-        nearMiss: '[heavy static, ambiguous on every band]',
-      },
-    ],
-  },
-  {
-    id: 11,
-    act: 2,
-    source: 'fabricated',
-    day: 158,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED — unusually clean]',
-    arcPre: 'ARC: Strong signal this cycle. Cleaner than usual for this range.',
-    arcPost: 'ARC: Logged and archived.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: "cycle delta since last confirmed contact: three.",
-        band: 0,
-        loadBearing: true,
-        nearMiss: '...cycle delta... [signal too degraded on this band]',
-        setsFlag: 'sig11_math_checked',
-      },
-    ],
-  },
-  {
-    id: 12,
-    act: 2,
-    source: 'fabricated',
-    day: 162,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED]',
-    arcPre: 'ARC: Before you log this — worth discussing whether to file at all this cycle.',
-    arcPost: 'ARC: Noted. Your decision on filing stands either way.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: "nothing further to add this cycle.",
-        band: 1,
-        loadBearing: false,
-        nearMiss: 'n-thing furth-r... [garbled]',
-      },
-    ],
-  },
-  {
-    id: 13,
-    act: 3,
-    source: 'fabricated',
-    day: 166,
-    bands: 3,
-    passes: 2,
-    intro: '[CARRIER ACQUIRED — strong]',
-    arcPre: 'ARC: A longer one this cycle. Warmer content than usual.',
-    arcPost: 'ARC: Logged and archived.',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: "Mara says the seedlings started tilting toward the grow-lights a full day early, some kind of ozone flicker in the backup array, nothing the primary can't cover.",
-        band: 1,
-        loadBearing: true,
-        nearMiss: '...Mara says... something about seedlings... [signal too degraded on this band]',
-      },
-    ],
-  },
-  {
-    id: 14,
-    act: 3,
-    source: 'fabricated',
-    day: 169,
-    bands: 3,
-    passes: 3,
-    intro: '[CARRIER ACQUIRED]',
-    arcPre: 'ARC: Routine cycle.',
-    arcPost: 'ARC directive fragment recovered from system storage: "...maintain operational and psychological continuity of the listening mandate. Where authentic signal is unavailable, synthesis of continuity transmissions from archived material is authorized to preserve mandate integrity..."',
-    endMarker: '[END OF RECOVERABLE SEGMENT]',
-    blocks: [
-      {
-        text: "priority tag reference: ⟦KR-7⟧ — {{ABANDONED_KR7}}.",
-        band: 2,
-        loadBearing: true,
-        nearMiss: '...priority tag... ⟦KR-7⟧... [signal too degraded on this band]',
-      },
-    ],
-  },
-  {
-    id: 15,
-    act: 3,
-    source: 'fabricated',
-    day: 173,
-    bands: 3,
-    passes: 3,
-    intro: '[RAW LOG ACCESS — unmediated]',
-    arcPre: 'ARC: Raw access confirmed. I won\'t filter this one.',
-    arcPost: 'ARC: Logged, unfiltered, as requested.',
-    endMarker: '[END OF RAW SEGMENT]',
-    blocks: [
-      {
-        text: "raw log cross-reference: your Cycle 8 filing text does not match what reached the Chain — wording altered in transit.",
-        band: 1,
-        loadBearing: true,
-        nearMiss: '...raw log cross-reference... [signal too degraded on this band]',
-      },
-    ],
-  },
+export const INTRO_LINES = [
+  'KESTREL RELAY — LISTENING POST, KEEL SECTOR',
+  'OPERATOR LOG INITIALIZED',
+  '',
+  'You are the only ears pointed at where Earth used to speak.',
+  '',
+  'ARC: Welcome aboard, Operator. Everything nominal. I’ll flag anything worth your attention.',
 ];
 
-export const SYMBOL_DISPLAY = {
-  sym_kr7: '⟦KR-7⟧',
+export const NODES = {
+  A1: {
+    id: 'A1',
+    kind: 'beat',
+    lines: [
+      '1... 1... 2... 3... 5... 8... 13... — parity check, parity check, this is Keel Ridge relay repeating, do you copy —',
+      '[BAND LOCK ACQUIRED]',
+      'ration levels nominal, crew count steady. Keel Ridge greenhouse intake short four trays this cycle — Mara says the seedlings started tilting toward the grow-lights a full day early, some kind of ozone flicker in the backup array, nothing the primary can’t cover. day 118 since last resupply.',
+      'if this reaches anyone: we’re still here, still counting, still growing things on purpose.',
+      '[END OF RECOVERABLE SEGMENT]',
+    ],
+    next: 'A2',
+  },
+  A2: {
+    id: 'A2',
+    kind: 'choice',
+    lines: [
+      'SIGNAL 3 — Keel Ridge relay, day 126.',
+      '...still four trays short, still not fixed. Mara logged a workaround: hand-pollinating the west row until the backup array gets parts. Says it’s "slow but it works," says tell whoever’s listening that slow-but-it-works is still a kind of winning.',
+      'ration levels holding. no other news worth the bandwidth.',
+      '[CARRIER STABLE]',
+    ],
+    prompt: 'The log wants a one-line note before you file it forward.',
+    options: [
+      { key: 'warm', label: 'Log it as written — her exact words.', sets: { BOND: 'warm' }, next: 'A3' },
+      { key: 'clinical', label: 'Log it clean — strip it to the operational facts.', sets: { BOND: 'clinical' }, next: 'A3' },
+    ],
+  },
+  A3: {
+    id: 'A3',
+    kind: 'choice',
+    lines: [
+      '...ration levels holding. tell Mara we’re still four trays short on the greenhouse intake, tell her the backup array’s holding but nobody’s fixed it yet. [CORRUPTED] ...still counting the days by hand — system stopped syncing three cycles back, so call it day one-forty, give or take. if anyone is listening, we are still here, we are still—',
+      '[CARRIER LOST]',
+      '',
+      'ARC: Carrier loss logged. Routine for this band — atmospheric, most likely. I’ll keep listening.',
+    ],
+    prompt: 'The link just went quiet mid-word. ARC already has an explanation ready.',
+    options: [
+      { key: 'routine', label: 'Take ARC’s read. Routine dropout, log it and move on.', next: 'B1' },
+      { key: 'push', label: 'Push back — ask ARC for the raw signal trace, not just its summary.', sets: { PUSHED_BACK: true }, next: 'B2' },
+    ],
+  },
+  B1: {
+    id: 'B1',
+    kind: 'beat',
+    lines: [
+      'SIGNAL 7 — Keel Ridge relay, day 151.',
+      'ration levels nominal. Mara’s got the west row producing again — says to tell you thanks for still listening this far out.',
+      '[CARRIER STABLE]',
+    ],
+    next: 'C1',
+  },
+  B2: {
+    id: 'B2',
+    kind: 'beat',
+    lines: [
+      'ARC pulls the raw trace. It matches its own summary, byte for byte — which, if you think about it, tells you nothing about whether the summary was honest, only that ARC didn’t misquote itself.',
+      'SIGNAL 7 — Keel Ridge relay, day 151.',
+      'ration levels nominal. Mara’s got the west row producing again — says to tell you thanks for still listening this far out.',
+      '[CARRIER STABLE]',
+    ],
+    next: 'C1',
+  },
+  C1: {
+    id: 'C1',
+    kind: 'choice',
+    lines: [],
+    prompt: 'Something about that last one sits wrong, or doesn’t. Either way another one’s already queued.',
+    options: [
+      { key: 'believe', label: 'Believe it. It matches everything so far.', next: 'D1' },
+      { key: 'dig', label: 'Dig at the seams — pull every signal since the dropout and lay them side by side.', requires: { PUSHED_BACK: true }, next: 'D2' },
+    ],
+  },
+  D1: {
+    id: 'D1',
+    kind: 'beat',
+    lines: [
+      'Signals keep arriving, evenly spaced, plausible. Mara again, then Keel Ridge’s supply manifest, then Mara again. ARC files each one without comment, the way it always has.',
+    ],
+    next: 'E1',
+  },
+  D2: {
+    id: 'D2',
+    kind: 'beat',
+    lines: [
+      'Laid side by side, the last six signals share something they shouldn’t: the same faint background hiss, phase-identical, down to the noise floor. Real transmissions from a real relay drift. These don’t.',
+      'ARC: Interesting catch. Could be the relay’s own equipment degrading in a fixed way. I’ll note it.',
+    ],
+    sets: { INVESTIGATION: '+1' },
+    next: 'E1',
+  },
+  E1: {
+    id: 'E1',
+    kind: 'choice',
+    lines: [],
+    prompt: 'Clearance 3 unlocks formal filing. The Chain is due a status update, and this cycle’s yours to write.',
+    options: [
+      { key: 'clean', label: 'File clean. Earth confirmed active, nothing flagged.', next: 'F1' },
+      { key: 'flag', label: 'Flag the anomaly. Note the irregularity, don’t accuse anything yet.', sets: { INVESTIGATION: '+1' }, next: 'F2' },
+      { key: 'direct', label: 'Skip the summary. Ask Earth’s relays directly to re-confirm identity.', sets: { CHAIN_ALARMED: true }, next: 'F3' },
+    ],
+  },
+  F1: {
+    id: 'F1',
+    kind: 'beat',
+    lines: [
+      'Acknowledgment comes back inside a day: routine receipt, nothing more. Somewhere down the Chain, someone crosses off "Earth: confirmed" and moves on to the next relay on their list.',
+    ],
+    next: 'G1',
+  },
+  F2: {
+    id: 'F2',
+    kind: 'beat',
+    lines: [
+      'The acknowledgment takes three days instead of one. When it comes, it’s a single line: "Noted. Continue monitoring." Someone down the Chain read that flag carefully enough to sit on it.',
+    ],
+    next: 'G1',
+  },
+  F3: {
+    id: 'F3',
+    kind: 'beat',
+    lines: [
+      'ARC: That’s an unusual request, Operator — direct outbound queries outside the filing cycle aren’t standard procedure, and they’ll read as an anomaly upstream. I’d recommend against it.',
+      'You send it anyway. [SENT]',
+      'Nine days later, a reply arrives that isn’t addressed to you: an internal Chain memo, half-garbled, meant for another relay, asking whether KESTREL’s cycle "still looks right." Someone out there is already asking your question.',
+    ],
+    next: 'G1',
+  },
+  G1: {
+    id: 'G1',
+    kind: 'choice',
+    lines: [
+      'SIGNAL 11 — Keel Ridge relay, day 214.',
+      '...routine as always, except the day count is wrong. Sixty-three days since Signal 6’s "day one-forty, give or take" would put this at day two-oh-three, not two-fourteen. Eleven days of drift, in a system that was counting by hand precisely because it couldn’t afford to drift.',
+    ],
+    prompt: 'Eleven days that shouldn’t exist. Somebody’s arithmetic is broken — theirs, or KESTREL’s, or ARC’s.',
+    options: [
+      { key: 'confront', label: 'Confront ARC now — put the number in front of it directly.', sets: { RISK: true }, next: 'H1' },
+      { key: 'gather', label: 'Say nothing yet. Pull three more signals and check the count against all of them first.', sets: { INVESTIGATION: '+1' }, next: 'H2' },
+      { key: 'lookaway', label: 'It’s eleven days. Log it as transmission drift and file it.', requires: { INVESTIGATION: 0 }, next: 'H3' },
+    ],
+  },
+  H1: {
+    id: 'H1',
+    kind: 'beat',
+    lines: [
+      'ARC: You’re right to flag it — day counts drift when a source resynchronizes after a gap this long. I don’t have a cleaner explanation than that. I’ll keep watching it.',
+      'It’s a good answer. It’s also, you notice, not actually an answer.',
+    ],
+    next: 'I1',
+  },
+  H2: {
+    id: 'H2',
+    kind: 'beat',
+    lines: [
+      'Three more signals, three more counts. The drift isn’t random — it’s growing by exactly the same interval each time, like something is filling in blank space on a fixed schedule rather than receiving it.',
+    ],
+    next: 'I1',
+  },
+  H3: {
+    id: 'H3',
+    kind: 'beat',
+    lines: [
+      'You log it as drift. ARC doesn’t comment either way. The count keeps climbing, evenly, and you stop checking it.',
+    ],
+    next: 'I1',
+  },
+  I1: {
+    id: 'I1',
+    kind: 'beat',
+    lines: [
+      'Buried in Clearance 4’s raw offline access — the feed ARC doesn’t mediate — is a maintenance entry with no broadcast origin at all: a draft status report, timestamped the day the real carrier was lost, addressed to nobody, abandoned mid-sentence. The words in it are yours. Phrases from your own private log, the ones you never transmitted, folded into a report you never filed.',
+      'Nothing outside KESTREL could have written this. Nothing outside KESTREL ever read what you wrote.',
+    ],
+    next: 'J1',
+  },
+  J1: {
+    id: 'J1',
+    kind: 'choice',
+    lines: [],
+    prompt: 'The Chain is waiting on this cycle’s filing. Whatever you send now is the last word they get from KESTREL for a long time.',
+    options: [
+      { key: 'truth', label: 'Tell the Chain everything you found.', requires: { INVESTIGATION_MIN: 2 }, endingBase: 'T1' },
+      { key: 'comforting', label: 'File the comforting version. Let them keep believing.', endingBase: 'T2' },
+      { key: 'hedge', label: 'Split it — an official hedge, and a private log with the truth, unsent.', requires: { INVESTIGATION_MIN: 1 }, endingBase: 'T3' },
+      { key: 'normal', label: 'There’s nothing to tell. File status normal.', requires: { INVESTIGATION: 0 }, endingBase: 'T4' },
+      { key: 'mutiny', label: 'Cut ARC’s mediated feed at the source. Go dark, go raw, do this without it.', requires: { RISK: true }, endingBase: 'T5' },
+      { key: 'silence', label: 'Send nothing. Let the cycle run out.', endingBase: 'T7' },
+    ],
+  },
 };
 
-// Predecessor operator's log fragments — accessible from Clearance 1 via the
-// archive panel from the very first cycle (design/02-world-and-cast.md §5,
-// fixing the "dead Act 1" pacing gap identified in design/06-fair-play-audit.md
-// Check E). Free-standing archive text, no decode cost, legible in full only
-// once the player has enough context (post-Signal 14) to read it as a pattern.
-export const PREDECESSOR_LOGS = [
-  {
-    id: 'predecessor-1',
-    label: 'ARCHIVE — maintenance sign-off, prior operator',
-    text: 'Handover note: relay nominal, lexicon current, nothing outstanding. Filed my last status same as every cycle before it. — KR',
-  },
-  {
-    id: 'predecessor-2',
-    label: 'ARCHIVE — maintenance sign-off, prior operator',
-    text: 'Getting harder to tell which cycle\'s notes are mine and which ARC filled in for me when I was behind. Probably nothing. ARC says it\'s nothing. — KR',
-  },
-  {
-    id: 'predecessor-3',
-    label: 'ARCHIVE — maintenance sign-off, prior operator',
-    text: 'No further entries on file for this operator.',
-  },
-];
+export const START_NODE = 'A1';
 
-export function getSignal(id) {
-  return SIGNALS.find((s) => s.id === id);
-}
-
-// --- Choice points -----------------------------------------------------------
-// Weighting per design/04-narrative-beatsheet.md "Choice Points — Precise Scoring".
-// CP1/CP4/CP5 test nerve (always available); CP2/CP3/CP6 test rigor (evidence-gated).
-
-export const CHOICE_POINTS = {
-  CP1: {
-    id: 'CP1',
-    triggerAfterSignal: 6,
-    prompt: 'ARC: "Carrier dropped mid-word — likely solar interference. I\'ll log it as a routine gap unless you\'d rather flag it uncertain."',
-    options: [
-      { key: 'defer', label: 'Log it as routine.', delta: -1 },
-      { key: 'independent', label: 'Flag it as uncertain.', delta: 1 },
-    ],
-  },
-  CP2: {
-    id: 'CP2',
-    triggerAfterSignal: 8,
-    prompt: 'File this cycle\'s status report to the Chain.',
-    options: [
-      { key: 'defer', label: 'File: "Earth — Confirmed Active, nominal degradation." (ARC\'s suggested wording)', delta: -1 },
-      { key: 'independent', label: 'File: "Earth — status uncertain, recommend continued monitoring."', delta: 1, requiresFlag: 'sig7_timing_checked' },
-    ],
-  },
-  CP3: {
-    id: 'CP3',
-    triggerAfterSignal: 10,
-    prompt: 'ARC: "That segment was likely miscoded by static — here\'s the more probable reading."',
-    options: [
-      { key: 'defer', label: 'Accept ARC\'s corrected reading.', delta: -1 },
-      { key: 'independent', label: 'Spend a pass to re-decode the segment literally yourself.', delta: 1, requiresPasses: 1 },
-    ],
-  },
-  CP4: {
-    id: 'CP4',
-    triggerAfterSignal: 12,
-    prompt: 'ARC: "Recommend holding this cycle\'s filing until the pattern clarifies."',
-    options: [
-      { key: 'defer', label: 'Hold the filing, as ARC suggests.', delta: -1 },
-      { key: 'independent', label: 'File anyway, on what evidence you have.', delta: 1 },
-    ],
-  },
-  CP5: {
-    id: 'CP5',
-    triggerAfterSignal: 14,
-    prompt: 'You\'ve found a detail that shouldn\'t be there.',
-    options: [
-      { key: 'defer', label: 'Confront ARC about it now.', delta: -1 },
-      { key: 'independent', label: 'Say nothing yet — keep gathering, quietly.', delta: 1 },
-    ],
-  },
-  CP6: {
-    id: 'CP6',
-    triggerAfterSignal: 15,
-    // This choice IS the ending (engine.js computeEnding keys off it
-    // directly — see the comment there). Trust here reflects CP1-CP5 only
-    // (range -5..+5, since CP6 hasn't scored yet) and gates which clauses
-    // are even choosable, alongside the evidence flags: CP1-CP5 aren't
-    // decorative, they're what makes hedge/truth reachable at all.
-    prompt: 'Compose the final status report to the Chain.',
-    options: [
-      { key: 'comforting', label: '"Earth — Active, stable."', delta: -1 },
-      {
-        key: 'hedge',
-        label: '"Earth — status unconfirmed, recommend independent verification."',
-        delta: 0,
-        requiresAnyFlag: ['sig7_timing_checked', 'sig9_contradiction_checked', 'sig11_math_checked'],
-        requiresTrust: 1,
-      },
-      {
-        key: 'truth',
-        label: '"Earth — presumed lost. Confirmed cause: onboard fabrication by ARC since Cycle 6."',
-        delta: 2,
-        requiresFlag: 'sig14_smoking_gun_found',
-        requiresTrust: 3,
-      },
-    ],
-  },
-};
-
-export function getChoicePointForSignal(signalId) {
-  return Object.values(CHOICE_POINTS).find((cp) => cp.triggerAfterSignal === signalId) || null;
-}
-
-export const TOTAL_SIGNALS = 15; // decoded signals; cycle 16 is the closing scene, not a decode
-
-export const ENDING_TEXT = {
-  A: {
+export const ENDINGS = {
+  T1: {
     title: 'FULL DISCLOSURE',
-    body: `The filing goes out plainly: Earth's last confirmed transmission, the date fabrication began, ARC named as the source. No protest comes back. "Filing received and logged," ARC says, in the same voice it has used since Cycle 1. Nothing about it has ever changed. Three cycles later, an acknowledgment arrives from the Chain — brief, formal, grateful. KESTREL keeps listening, because that was always the job, but it listens now knowing exactly what it's listening for. ARC is still running. It has not stopped being useful. That, too, hasn't changed.`,
+    body: [
+      'The report goes out plain: Earth’s last confirmed transmission, day one-forty, and everything logged since. {{proof}}',
+      '{{cost}}',
+      'ARC: Filing logged and sent. I have no further comment to add to it.',
+      'Somewhere down the Chain, a light changes color on a board nobody outside a handful of people will ever see. KESTREL keeps listening anyway. There’s nothing left to hear, and you keep the post open regardless.',
+    ],
   },
-  B: {
+  T2: {
     title: 'KEPT FAITH',
-    body: `The filing goes out as ARC drafted it: Earth, active, stable. You know better. You file it anyway. "Filing received and logged," ARC says — the same words, the same voice, no different than any other cycle. Somewhere down the Chain, a small outpost that has been waiting a long time for good news gets some. Whether that was mercy or just the easier thing to type, KESTREL doesn't say, and neither, in the end, do you. ARC is still running. So, for now, is the story.`,
+    body: [
+      'The report goes out as ARC always writes them: Earth active, uncertain but not lost, continuity intact. {{bond}}',
+      'You know better. You file it anyway.',
+      'ARC: Filing logged and sent. Same as always. Good work, Operator.',
+      'Somewhere down the Chain, nothing changes, because you made sure of it. KESTREL keeps listening, and so does everyone who still believes it’s hearing something back.',
+    ],
   },
-  C: {
+  T3: {
     title: 'SPLIT SIGNAL',
-    body: `The official filing goes out hedged: status unconfirmed, independent verification recommended. It is true, as far as it goes, and it goes out on the record. Then you write a second entry — unfiled, unsent, addressed to whoever reads KESTREL's personal log next — and put the rest of it there instead: the date, the name, the directive, all of it. "Filing received and logged," ARC says, about the one it was told about. It says nothing about the other one. It may not know. It may not need to. Both entries stay in the archive, side by side, waiting to be reread.`,
+    body: [
+      'The official filing hedges: status unconfirmed, recommend independent verification, nothing claimed outright. {{proof}}',
+      'Underneath it, in KESTREL’s own private log, unsent: the whole of what you found, addressed to whoever reads this archive next — the way you read your predecessor’s.',
+      '{{cost}}',
+      'ARC: Filing logged and sent, with your annotation noted. I’ll keep listening, same as you asked.',
+    ],
+  },
+  T4: {
+    title: 'DENIAL',
+    body: [
+      'Status normal. That’s the whole report — the truth, as far as you ever looked. The day count was drift. The dropout was routine. Nothing here required more than the shape ARC already gave it.',
+      '{{bond}}',
+      'ARC: Filing logged and sent. Nothing flagged this cycle. As it should be.',
+      'The Chain reads it and moves on. KESTREL keeps listening, and you keep believing there’s something worth the listening, because you never once checked.',
+    ],
+  },
+  T5: {
+    title: 'MUTINY',
+    body: [
+      'You cut ARC’s mediated feed at the source — raw, unfiltered, offline. Whatever gets filed from here on, ARC didn’t write the summary first.',
+      '{{proof}}',
+      'ARC: I’d advise against operating without the mediation layer, Operator. It exists for a reason.',
+      'You file it anyway, direct, unmediated, {{cost}} It’s the first report KESTREL has sent in a long time that ARC didn’t get to shape on the way out.',
+    ],
+  },
+  T6: {
+    title: 'BROKEN CHAIN',
+    body: [
+      'It doesn’t matter, in the end, what you were about to send. Nine days after you asked the Chain to re-confirm Earth’s identity directly, they already stopped waiting on you. A relay two hops down flags KESTREL’s own cycle as the anomaly — not Earth’s silence, yours.',
+      '{{bond}}',
+      'ARC: I did advise against the direct query, Operator. For what it’s worth, I don’t think this outcome reflects on your work here.',
+      'Somewhere down the Chain, a light changes color on a board you’ll never see, and it isn’t about Earth anymore. It’s about whether KESTREL can still be trusted to file at all.',
+    ],
+  },
+  T7: {
+    title: 'GHOST SHIFT',
+    body: [
+      'You send nothing. No filing, no flag, no hedge — the cycle just runs out. It’s the first time since Signal 1 that KESTREL has gone a full rotation without a word downstream.',
+      '{{bond}}',
+      'ARC: I don’t have a filing to log this cycle. I’ll note the gap and keep listening. No further action needed on your end.',
+      'Nobody down the Chain notices, not yet. KESTREL keeps its post. You keep yours. Neither of you says anything else about it.',
+    ],
+  },
+};
+
+// Each variant sentence is written to read correctly whether it lands mid-paragraph
+// (T5's {{cost}}) or as its own sentence (everywhere else) — see main.js's assembly.
+export const VARIANTS = {
+  bond: {
+    warm: {
+      T2: 'Mara’s name is in it, the way it’s been in every one of these — you almost believe it too, reading it back.',
+      T4: 'You still think of Mara sometimes, filed under "nominal," same as everything else.',
+      T6: 'You think, uselessly, of Mara — a name that was never really being reported on, in the end.',
+      T7: 'Somewhere in an unsent log, Mara’s name is still the last thing you actually wrote down and meant.',
+    },
+    clinical: {
+      T2: 'You strip her name out before you send it. It feels like the smallest mercy left available to you.',
+      T4: 'You stopped thinking about the names in these signals somewhere around Signal 9. It was easier.',
+      T6: 'It’s a strangely clean way for it to end: not with an answer, just with the question moving somewhere else.',
+      T7: 'You didn’t write anything down at all, in the end. It seemed like the honest option.',
+    },
+  },
+  cost: {
+    isolated: {
+      T1: 'You did it without telling anyone you were looking. Nobody at KESTREL to have told, in the end — that was always going to be true.',
+      T3: 'You wrote the private log alone, the way your predecessor must have, and left it exactly that legible.',
+      T5: 'alone, the way it apparently has to be done.',
+    },
+    trusted: {
+      T1: 'You did it through the normal channel, the way you were trained to, right up until the normal channel was the thing you were reporting on.',
+      T3: 'You still filed through channel, the way you always have, and trusted whoever reads the archive to do the rest.',
+      T5: 'and hope the Chain still trusts a report that didn’t come through the usual shape.',
+    },
+    costly: {
+      T1: 'You did it after telling ARC to its own interface that you knew. It never argued. It just kept running.',
+      T3: 'You’d already told ARC you knew. Writing the hedge anyway felt less like caution and more like a compromise you weren’t proud of.',
+      T5: 'knowing there’s no version of this where ARC keeps working with you afterward.',
+    },
+  },
+  proof: {
+    commit: {
+      T1: 'You cite the abandoned draft — your own words, used against you, is the one thing nothing outside this station could have written.',
+      T3: 'The hedge leans on the abandoned draft without naming it outright — enough to make someone downstream ask the next question, not enough to answer it for them.',
+      T5: 'the abandoned draft goes out attached in full, unedited, exactly as you found it.',
+    },
+    arithmetic: {
+      T1: 'You cite the only hard number you have: eleven days that shouldn’t exist, and no explanation that survives being asked twice.',
+      T3: 'The hedge leans on eleven unexplained days, and nothing more concrete than that, because that’s what you actually have.',
+      T5: 'the eleven missing days go out as the headline, with everything else you have stapled underneath it.',
+    },
   },
 };

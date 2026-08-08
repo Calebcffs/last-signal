@@ -5,7 +5,6 @@
   --fg-dim: #6f9c86;
   --accent: #58e6a6;
   --warn: #e6b458;
-  --danger: #e65858;
   --border: #234034;
   font-size: 16px;
 }
@@ -21,124 +20,165 @@ html, body {
   min-height: 100%;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
 #app {
-  max-width: 860px;
+  max-width: 720px;
   margin: 0 auto;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--border);
-  border-right: 1px solid var(--border);
+  justify-content: flex-start;
+  padding: 2rem 1.25rem 3rem;
 }
 
-#topbar, #statusbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.6rem 1rem;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.85rem;
-  color: var(--fg-dim);
-  letter-spacing: 0.05em;
-}
-#statusbar { border-bottom: none; border-top: 1px solid var(--border); }
-
-#station-id { color: var(--accent); }
-
-.panel-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-#main-panel {
-  flex: 1;
-  padding: 1.25rem 1.25rem 2rem;
-  overflow-x: hidden;
-}
-
-.signal-header {
-  color: var(--fg-dim);
-  font-size: 0.85rem;
-  margin-bottom: 0.75rem;
-  white-space: pre-wrap;
-}
-
-.signal-intro {
-  color: var(--fg-dim);
-  font-style: italic;
-  margin-bottom: 1rem;
-  line-height: 1.5;
-}
-
-.arc-line {
-  border-left: 2px solid var(--accent);
-  padding: 0.5rem 0.8rem;
-  margin: 0.9rem 0;
-  color: var(--fg-dim);
-  background: var(--panel);
-}
-.arc-line::before {
-  content: "ARC — ";
-  color: var(--accent);
-}
-
-.blocks {
+/* ---- Title screen ---- */
+.title-screen {
+  min-height: 70vh;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  margin: 1rem 0;
-}
-
-.block {
-  padding: 0.6rem 0.8rem;
-  border: 1px solid var(--border);
-  border-radius: 2px;
-  line-height: 1.55;
-  background: var(--panel);
-}
-.block.noise { color: var(--fg-dim); letter-spacing: 0.03em; }
-.block.nearmiss { color: var(--warn); }
-.block.resolved { color: var(--fg); }
-.block .clean-btn {
-  display: inline-block;
-  margin-top: 0.4rem;
-}
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
   align-items: center;
-  margin: 1rem 0;
+  justify-content: center;
+  text-align: center;
+  gap: 1.6rem;
+}
+.title-mark {
+  font-size: 0.8rem;
+  letter-spacing: 0.35em;
+  color: var(--fg-dim);
+}
+.title-name {
+  font-size: clamp(2.1rem, 8vw, 3.2rem);
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  text-shadow: 0 0 18px rgba(88, 230, 166, 0.25);
+}
+.title-prompt {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color: var(--fg-dim);
+}
+.title-prompt .cursor { animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.resume-note { font-size: 0.78rem; color: var(--fg-dim); }
+
+/* ---- Story screen ---- */
+.story-screen {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: 12vh;
+  gap: 1.1rem;
+}
+.transmission {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  line-height: 1.65;
+  font-size: 1.02rem;
+}
+.transmission p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.transmission p.arc {
+  color: var(--fg-dim);
+  border-left: 2px solid var(--accent);
+  padding-left: 0.8rem;
+}
+.transmission p .typed-cursor {
+  display: inline-block;
+  width: 0.55em;
+  background: var(--accent);
+  margin-left: 1px;
+  animation: blink 0.9s step-end infinite;
 }
 
-button {
-  font-family: inherit;
-  background: transparent;
-  color: var(--fg);
-  border: 1px solid var(--border);
-  padding: 0.4rem 0.8rem;
+.advance-hint {
+  color: var(--fg-dim);
+  font-size: 0.82rem;
   cursor: pointer;
-  font-size: 0.85rem;
-  border-radius: 2px;
+  align-self: flex-start;
+  margin-top: 0.3rem;
 }
-button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-button:disabled { opacity: 0.35; cursor: not-allowed; }
-button.primary { border-color: var(--accent); color: var(--accent); }
-button.small { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
-
-.decode-pct { color: var(--fg-dim); font-size: 0.85rem; margin-top: 0.5rem; }
+.advance-hint .cursor { animation: blink 1s step-end infinite; }
 
 .choice-block {
-  margin-top: 1.5rem;
+  margin-top: 0.8rem;
   padding-top: 1rem;
   border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
 }
-.choice-prompt { margin-bottom: 0.7rem; color: var(--fg); }
+.choice-prompt { color: var(--fg); line-height: 1.55; }
 .choice-options { display: flex; flex-direction: column; gap: 0.5rem; }
 
-#statusbar #passes-indicator { color: var(--accent); }
+button.choice-btn {
+  font-family: inherit;
+  text-align: left;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  padding: 0.65rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.92rem;
+  border-radius: 2px;
+  line-height: 1.4;
+  transition: border-color 0.15s, color 0.15s, transform 0.1s;
+}
+button.choice-btn:hover { border-color: var(--accent); color: var(--accent); }
+button.choice-btn:active { transform: translateX(2px); }
+button.choice-btn .key {
+  color: var(--fg-dim);
+  margin-right: 0.6em;
+}
+button.choice-btn:hover .key { color: var(--accent); }
+
+/* ---- Ending screen ---- */
+.ending-screen {
+  min-height: 65vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-top: 10vh;
+  gap: 1.4rem;
+}
+.ending-title {
+  color: var(--warn);
+  letter-spacing: 0.14em;
+  font-size: 1.1rem;
+}
+.ending-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  line-height: 1.65;
+  font-size: 1rem;
+}
+.ending-body p { margin: 0; white-space: pre-wrap; }
+.ending-footer {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+button.plain-btn {
+  font-family: inherit;
+  background: transparent;
+  color: var(--fg-dim);
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  border-radius: 2px;
+}
+button.plain-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.hush { color: var(--fg-dim); font-size: 0.78rem; }

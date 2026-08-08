@@ -1,25 +1,21 @@
-import { chromium } from 'playwright-core';
+// Points directly at the deployed Pages URL, not localhost — run this after
+// any deploy to confirm the branching-narrative build is actually live.
+import { launchPage, beginFromTitle, playToEnding } from './helpers.mjs';
 
-const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
-const page = await browser.newPage();
-const errors = [];
-page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
-page.on('pageerror', (err) => errors.push('pageerror: ' + err.message));
+const URL = 'https://calebcffs.github.io/last-signal/';
 
-await page.goto('https://calebcffs.github.io/last-signal/', { waitUntil: 'load' });
-await page.waitForSelector('#begin-btn', { timeout: 10000 });
-console.log('title screen loaded: ok');
+const { browser, page, errors } = await launchPage(URL);
+await beginFromTitle(page);
+console.log('title screen loaded and begin worked: ok');
 
-await page.click('#begin-btn');
-await page.waitForSelector('#main-panel .block', { timeout: 10000 });
-console.log('Signal 1 loaded: ok');
-
-await page.click('button[data-band="1"]');
-await page.waitForTimeout(200);
-const decodePct = await page.textContent('.decode-pct');
-console.log('decode after one band pass:', decodePct);
+const title = await playToEnding(page, ['[1]', '[2]', '[2]', '[2]', '[2]', '[1]']);
+console.log('reached ending:', title.trim(), '(expected FULL DISCLOSURE)');
 
 await page.screenshot({ path: '/tmp/claude-1000/-home-calebclayton/516d029d-ad42-46e8-b57c-fefad6a07a50/scratchpad/live-site-check.png' });
 
-console.log('console/page errors:', JSON.stringify(errors.filter((e) => !e.includes('favicon'))));
+const realErrors = errors.filter((e) => !e.includes('favicon'));
+console.log('console/page errors:', JSON.stringify(realErrors));
+if (realErrors.length || title.trim() !== 'FULL DISCLOSURE') process.exit(1);
+
 await browser.close();
+console.log('\nLive smoke test passed.');
