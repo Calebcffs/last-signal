@@ -1,6 +1,8 @@
 # LAST SIGNAL
 
-Working title carried over from the founding whitepaper. `design/` holds the narrative/gameplay design pass done *before* any implementation, per the project's stated priority: the mystery, the mechanic, and the balance had to be genuinely well-built before a line of engine code got written. `game/` is the actual playable build — **complete and passing its Definition of Done** as of this pass. See `game/README.md` for how to run it.
+**Play it: https://calebcffs.github.io/last-signal/**
+
+Working title carried over from the founding whitepaper. `design/` holds the narrative/gameplay design pass done *before* any implementation, per the project's stated priority: the mystery, the mechanic, and the balance had to be genuinely well-built before a line of engine code got written. `game/` is the actual playable build — **complete and passing its Definition of Done** as of this pass, and deployed live via GitHub Pages (`.github/workflows/pages.yml`, deploys `game/` on every push to `main`). See `game/README.md` to run it locally instead.
 
 ## Definition of Done (pinned before implementation started)
 

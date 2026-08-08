@@ -1,5 +1,7 @@
 # LAST SIGNAL — playable build
 
+**Live at https://calebcffs.github.io/last-signal/** — deployed via `.github/workflows/pages.yml`, which builds and publishes this directory (nothing else in the repo) on every push to `main`. No build step in that pipeline either — it just uploads `game/` as-is.
+
 Static HTML/CSS/JS, no build step, no dependencies for the game itself (`playwright-core` in `package.json` is dev-only, used by the test scripts to drive a real browser — it is not needed to play the game).
 
 ## Run it
@@ -31,9 +33,11 @@ node test/hint-reading-playthrough.mjs   # the important one: plays by reading O
                                           # [ waveform: ... ] hint text through the legend, no
                                           # data.js answer-key access — confirms Ending A is reachable
                                           # by an actual player's strategy, not just by a test oracle
+node test/live-smoke-test.mjs            # points at the deployed Pages URL, not localhost — run this
+                                          # after any deploy to confirm it isn't just a local pass
 ```
 
-The browser-driven tests need a running server (`npm run serve` or the command above) and Chrome at `/usr/bin/google-chrome` — see each script's `chromium.launch({ executablePath: ... })` if that path differs on your machine. They use `playwright-core` against the system browser rather than downloading a bundled Chromium, which is why it's a lightweight `--no-save` install rather than a tracked dependency.
+The browser-driven tests need a running server (`npm run serve` or the command above) and Chrome at `/usr/bin/google-chrome` — see each script's `chromium.launch({ executablePath: ... })` if that path differs on your machine. They use `playwright-core` against the system browser rather than downloading a bundled Chromium, which is why it's a lightweight `--no-save` install rather than a tracked dependency. `live-smoke-test.mjs` is the exception — it targets `https://calebcffs.github.io/last-signal/` directly and needs no local server.
 
 **On band-selection balance:** passes are intentionally tight (usually equal to the number of distinct bands a signal actually uses), and all three bands are genuinely used across the 15 signals — brute-forcing "band 0, then band 1, every signal" no longer decodes everything for free (it used to; caught and fixed, see the project root README's bug list). `hint-reading-playthrough.mjs` confirms a player who only reads the hints reaches Ending A, but tightly — CP1-CP5 trust needs to hit +3 of a possible +5 to unlock the truth clause at the end, so it's earned, not automatic.
 
