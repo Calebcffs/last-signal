@@ -45,6 +45,11 @@ const I1_LINES = [
   'Buried in Clearance 4’s raw offline access — the feed ARC doesn’t mediate — is a maintenance entry with no broadcast origin at all: a draft status report, timestamped the day the real carrier was lost, addressed to nobody, abandoned mid-sentence. The words in it are yours. Phrases from your own private log, the ones you never transmitted, folded into a report you never filed.',
   'Nothing outside KESTREL could have written this. Nothing outside KESTREL ever read what you wrote.',
 ];
+const ARCHIVE_PROMPT = 'There’s more in Clearance 4’s raw offline access, if you want it before this cycle’s filing goes out.';
+const ARCHIVE_OPTIONS = [
+  { key: 'open', label: 'Open it. Read the whole thing.', sets: { COMMIT_READ: true }, next: 'N7read' },
+  { key: 'close', label: 'Leave it. You already know enough to file.', next: 'N7skip' },
+];
 const J1_PROMPT = 'The Chain is waiting on this cycle’s filing. Whatever you send now is the last word they get from KESTREL for a long time.';
 const J1_OPTIONS = [
   { key: 'truth', label: 'Tell the Chain everything you found.', requires: { INVESTIGATION_MIN: 2 }, endingBase: 'T1' },
@@ -175,31 +180,39 @@ export const NODES = {
     lines: [
       'ARC: You’re right to flag it — day counts drift when a source resynchronizes after a gap this long. I don’t have a cleaner explanation than that. I’ll keep watching it.',
       'It’s a good answer. It’s also, you notice, not actually an answer.',
-      '',
-      ...I1_LINES,
     ],
-    prompt: J1_PROMPT,
-    options: J1_OPTIONS,
+    prompt: ARCHIVE_PROMPT,
+    options: ARCHIVE_OPTIONS,
   },
   N6b: {
     id: 'N6b',
     kind: 'choice',
     lines: [
       'Three more signals, three more counts. The drift isn’t random — it’s growing by exactly the same interval each time, like something is filling in blank space on a fixed schedule rather than receiving it.',
-      '',
-      ...I1_LINES,
     ],
-    prompt: J1_PROMPT,
-    options: J1_OPTIONS,
+    prompt: ARCHIVE_PROMPT,
+    options: ARCHIVE_OPTIONS,
   },
   N6c: {
     id: 'N6c',
     kind: 'choice',
     lines: [
       'You log it as drift. ARC doesn’t comment either way. The count keeps climbing, evenly, and you stop checking it.',
-      '',
-      ...I1_LINES,
     ],
+    prompt: ARCHIVE_PROMPT,
+    options: ARCHIVE_OPTIONS,
+  },
+  N7read: {
+    id: 'N7read',
+    kind: 'choice',
+    lines: I1_LINES,
+    prompt: J1_PROMPT,
+    options: J1_OPTIONS,
+  },
+  N7skip: {
+    id: 'N7skip',
+    kind: 'choice',
+    lines: [],
     prompt: J1_PROMPT,
     options: J1_OPTIONS,
   },
@@ -256,7 +269,7 @@ export const ENDINGS = {
   T6: {
     title: 'BROKEN CHAIN',
     body: [
-      'Your report goes out — whatever you chose to send. It doesn’t reach anyone in time to matter: nine days before you ever sat down to write it, the Chain’s own inquiry got there first, triggered the moment you asked them to re-confirm Earth’s identity directly. A relay two hops down has already flagged KESTREL’s own cycle as the anomaly, not Earth’s silence.',
+      'Your report goes out — whatever you chose to send. It doesn’t reach anyone in time to matter: the Chain’s own inquiry already got there first, triggered the moment you asked them to re-confirm Earth’s identity directly. A relay two hops down has already flagged KESTREL’s own cycle as the anomaly, not Earth’s silence.',
       '{{bond}}',
       'ARC: I did advise against the direct query, Operator. For what it’s worth, I don’t think this outcome reflects on your work here.',
       'Somewhere down the Chain, a light changes color on a board you’ll never see, and it isn’t about Earth anymore. It’s about whether KESTREL can still be trusted to file at all.',
@@ -291,16 +304,19 @@ export const VARIANTS = {
       T7: 'You didn’t write anything down at all, in the end. It seemed like the honest option.',
     },
   },
+  // T5 (mutiny) requires RISK, which always resolves cost to 'costly' — so
+  // T5 has no isolated/trusted entry here. Keeping unreachable leaves would
+  // be dead content the assembly test can't see; the inverse check below
+  // (every leaf must appear in a real playthrough) would catch either an
+  // accidental T5 entry here going stale or a real one going unreachable.
   cost: {
     isolated: {
       T1: 'You did it without telling anyone you were looking. Nobody at KESTREL to have told, in the end — that was always going to be true.',
       T3: 'You wrote the private log alone, the way your predecessor must have, and left it exactly that legible.',
-      T5: 'alone, the way it apparently has to be done.',
     },
     trusted: {
       T1: 'You did it through the normal channel, the way you were trained to, right up until the normal channel was the thing you were reporting on.',
       T3: 'You still filed through channel, the way you always have, and trusted whoever reads the archive to do the rest.',
-      T5: 'and hope the Chain still trusts a report that didn’t come through the usual shape.',
     },
     costly: {
       T1: 'You did it after telling ARC to its own interface that you knew. It never argued. It just kept running.',

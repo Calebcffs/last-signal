@@ -2,17 +2,29 @@ import {
   createInitialState, choose, advance, getCurrentNode,
   getAvailableOptions, getEnding, isChoicePending,
 } from './engine.js';
-import { TITLE, INTRO_LINES } from './data.js';
+import { TITLE, INTRO_LINES, NODES, ENDINGS } from './data.js';
 
-const SAVE_KEY = 'last-signal-save-v2';
+// Bumped whenever the node graph's shape changes (node IDs renamed, etc) —
+// a save keyed to an old node vocabulary is validated below regardless, but
+// bumping the key means it's never even read as a candidate.
+const SAVE_KEY = 'last-signal-save-v3';
 const root = document.getElementById('app');
 
 let engineState = null;
 
+// A save is only usable if it points at a node/ending that still exists —
+// otherwise a content change (like a node-ID rename) leaves a save that
+// resumes into `undefined` and crashes. Treat anything else as no save.
 function loadSave() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (parsed.ended) {
+      return parsed.endingId && ENDINGS[parsed.endingId] ? parsed : null;
+    }
+    return parsed.nodeId && NODES[parsed.nodeId] ? parsed : null;
   } catch {
     return null;
   }

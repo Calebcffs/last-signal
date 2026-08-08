@@ -8,7 +8,7 @@ const { browser, page, errors } = await launchPage(URL);
 await beginFromTitle(page);
 console.log('title screen loaded and begin worked: ok');
 
-const title = await playToEnding(page, ['[1]', '[2]', '[2]', '[2]', '[2]', '[1]']);
+const title = await playToEnding(page, ['[1]', '[2]', '[2]', '[2]', '[2]', '[1]', '[1]']);
 console.log('reached ending:', title.trim(), '(expected FULL DISCLOSURE)');
 
 await page.screenshot({ path: '/tmp/claude-1000/-home-calebclayton/516d029d-ad42-46e8-b57c-fefad6a07a50/scratchpad/live-site-check.png' });

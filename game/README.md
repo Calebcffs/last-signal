@@ -18,7 +18,7 @@ Progress autosaves to `localStorage` (single slot) after every choice. A reload 
 ## Structure
 
 - `src/engine.js` — pure game logic: the node-graph state machine (flags, gated option visibility, ending resolution including the delayed-consequence override). No DOM references; runs identically under Node and in the browser. This is what `test/archetypes.test.js` exercises headlessly.
-- `src/data.js` — all content: the eleven choice nodes (`NODES` — every node ends in a decision, no read-only filler screens), the seven terminal endings with their variant-text slots (`ENDINGS`, `VARIANTS`), the intro lines.
+- `src/data.js` — all content: the thirteen choice nodes (`NODES` — every node ends in a decision, no read-only filler screens), the seven terminal endings with their variant-text slots (`ENDINGS`, `VARIANTS`), the intro lines.
 - `src/main.js` — rendering and event wiring: the typewriter-with-synthesized-blip renderer, title/story/ending phase transitions, save/load, choice buttons (click or number-key).
 - `style.css` — terminal aesthetic, single stylesheet, no preprocessor.
 
@@ -38,7 +38,7 @@ node test/live-smoke-test.mjs     # points at the deployed Pages URL, not localh
 
 The browser-driven tests need a running server (the command above) and Chrome at `/usr/bin/google-chrome` — see `test/helpers.mjs`'s `chromium.launch({ executablePath: ... })` if that path differs on your machine. They use `playwright-core` against the system browser rather than downloading a bundled Chromium, which is why it's a lightweight `--no-save` install rather than a tracked dependency. `live-smoke-test.mjs` is the exception — it targets `https://calebcffs.github.io/last-signal/` directly and needs no local server.
 
-**On the branching structure:** every choice node has at least one option that's always available (no dead ends possible), and several options only appear once an earlier choice earned them — see `design/08-branching-structure.md` for the full graph and the three real gates. `archetypes.test.js` asserts on option *visibility*, not just reachability, so a regression that accidentally always-shows a gated option would fail the suite.
+**On the branching structure:** every choice node has at least one option that's always available (no dead ends possible), and several options only appear once an earlier choice earned them — see `design/08-branching-structure.md` for the full graph and the four real gates. `archetypes.test.js` asserts on option *visibility*, not just reachability, so a regression that accidentally always-shows a gated option would fail the suite.
 
 ## Design source
 

@@ -6,13 +6,13 @@ import { launchPage, beginFromTitle, playToEnding } from './helpers.mjs';
 const URL = 'http://localhost:8787/';
 
 const ARCHETYPES = [
-  { name: 'full disclosure', queue: ['[1]', '[2]', '[2]', '[2]', '[2]', '[1]'], expect: 'FULL DISCLOSURE' },
-  { name: 'kept faith', queue: ['[2]', '[1]', '[1]', '[1]', '[3]', '[1]'], expect: 'KEPT FAITH' },
-  { name: 'denial', queue: ['[2]', '[1]', '[1]', '[1]', '[3]', '[2]'], expect: 'DENIAL' },
-  { name: 'split signal', queue: ['[1]', '[2]', '[2]', '[1]', '[2]', '[3]'], expect: 'SPLIT SIGNAL' },
-  { name: 'mutiny', queue: ['[2]', '[1]', '[1]', '[1]', '[1]', '[3]'], expect: 'MUTINY' },
-  { name: 'broken chain', queue: ['[2]', '[1]', '[1]', '[3]', '[2]', '[1]'], expect: 'BROKEN CHAIN' },
-  { name: 'ghost shift', queue: ['[2]', '[1]', '[1]', '[1]', '[3]', '[3]'], expect: 'GHOST SHIFT' },
+  { name: 'full disclosure', queue: ['[1]', '[2]', '[2]', '[2]', '[2]', '[1]', '[1]'], expect: 'FULL DISCLOSURE' },
+  { name: 'kept faith', queue: ['[2]', '[1]', '[1]', '[1]', '[3]', '[2]', '[1]'], expect: 'KEPT FAITH' },
+  { name: 'denial', queue: ['[2]', '[1]', '[1]', '[1]', '[3]', '[2]', '[2]'], expect: 'DENIAL' },
+  { name: 'split signal', queue: ['[1]', '[2]', '[2]', '[1]', '[2]', '[2]', '[3]'], expect: 'SPLIT SIGNAL' },
+  { name: 'mutiny', queue: ['[2]', '[1]', '[1]', '[1]', '[1]', '[1]', '[3]'], expect: 'MUTINY' },
+  { name: 'broken chain', queue: ['[2]', '[1]', '[1]', '[3]', '[2]', '[2]', '[1]'], expect: 'BROKEN CHAIN' },
+  { name: 'ghost shift', queue: ['[2]', '[1]', '[1]', '[1]', '[3]', '[1]', '[3]'], expect: 'GHOST SHIFT' },
 ];
 
 let failed = false;

@@ -6,7 +6,7 @@ const URL = 'http://localhost:8787/';
 
 const { browser, page, errors } = await launchPage(URL);
 await beginFromTitle(page);
-await playToEnding(page, ['[2]', '[1]', '[1]', '[1]', '[3]', '[1]']); // kept faith, fastest deferential path
+await playToEnding(page, ['[2]', '[1]', '[1]', '[1]', '[3]', '[2]', '[1]']); // kept faith, fastest deferential path
 
 await page.locator('.plain-btn', { hasText: 'play again' }).click();
 await page.waitForSelector('.title-name', { timeout: 10000 });

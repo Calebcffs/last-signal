@@ -4,6 +4,7 @@
 // DOM, no browser.
 import assert from 'node:assert/strict';
 import { createInitialState, choose, getAvailableOptions, getEnding, isChoicePending } from '../src/engine.js';
+import { VARIANTS } from '../src/data.js';
 
 function play(sequence) {
   let state = createInitialState();
@@ -22,13 +23,13 @@ function run(name, sequence, expectedEndingId) {
   console.log(`ok  ${name} -> ${ending.id} (${ending.title})`);
 }
 
-run('full disclosure, evidence-heavy', ['warm', 'push', 'dig', 'flag', 'gather', 'truth'], 'T1');
-run('kept faith, deferential throughout', ['clinical', 'routine', 'believe', 'clean', 'lookaway', 'comforting'], 'T2');
-run('denial, never investigates', ['clinical', 'routine', 'believe', 'clean', 'lookaway', 'normal'], 'T4');
-run('split signal, partial evidence', ['warm', 'push', 'dig', 'clean', 'gather', 'hedge'], 'T3');
-run('mutiny, confronts ARC directly', ['clinical', 'routine', 'believe', 'clean', 'confront', 'mutiny'], 'T5');
-run('broken chain overrides the chosen ending', ['clinical', 'routine', 'believe', 'direct', 'gather', 'comforting'], 'T6');
-run('ghost shift, silence available from any path', ['clinical', 'routine', 'believe', 'clean', 'lookaway', 'silence'], 'T7');
+run('full disclosure, evidence-heavy, reads the archive', ['warm', 'push', 'dig', 'flag', 'gather', 'open', 'truth'], 'T1');
+run('kept faith, deferential throughout, skips the archive', ['clinical', 'routine', 'believe', 'clean', 'lookaway', 'close', 'comforting'], 'T2');
+run('denial, never investigates', ['clinical', 'routine', 'believe', 'clean', 'lookaway', 'close', 'normal'], 'T4');
+run('split signal, partial evidence, skips the archive', ['warm', 'push', 'dig', 'clean', 'gather', 'close', 'hedge'], 'T3');
+run('mutiny, confronts ARC directly, reads the archive', ['clinical', 'routine', 'believe', 'clean', 'confront', 'open', 'mutiny'], 'T5');
+run('broken chain overrides the chosen ending', ['clinical', 'routine', 'believe', 'direct', 'gather', 'close', 'comforting'], 'T6');
+run('ghost shift, silence available from any path', ['clinical', 'routine', 'believe', 'clean', 'lookaway', 'open', 'silence'], 'T7');
 
 // Gating: 'dig' shouldn't even appear at the "wrong note" choice without PUSHED_BACK.
 {
@@ -44,7 +45,7 @@ run('ghost shift, silence available from any path', ['clinical', 'routine', 'bel
 // Gating: the final filing's 'truth' requires INVESTIGATION >= 2; 'mutiny' requires RISK.
 {
   let state = createInitialState();
-  const seq = ['clinical', 'routine', 'believe', 'clean', 'lookaway'];
+  const seq = ['clinical', 'routine', 'believe', 'clean', 'lookaway', 'close'];
   for (const step of seq) state = choose(state, step);
   const opts = getAvailableOptions(state).map((o) => o.key);
   assert.ok(!opts.includes('truth'), 'truth should be unavailable with 0 investigation');
@@ -59,10 +60,11 @@ run('ghost shift, silence available from any path', ['clinical', 'routine', 'bel
 // empty-string substitution. This is the check that would have caught the
 // T5 {{proof}} capitalization bug — the earlier suite only ever rendered one
 // of the sixteen reachable ending texts.
-{
-  const seenTexts = new Set();
-  const perEnding = {};
+const seenTexts = new Set();
+const perEnding = {};
+const bodiesByEnding = {};
 
+{
   function walk(state) {
     if (state.ended) {
       const ending = getEnding(state);
@@ -71,10 +73,12 @@ run('ghost shift, silence available from any path', ['clinical', 'routine', 'bel
         assert.ok(line.length > 0, `${ending.id}: empty line in assembled body`);
         assert.match(line, /^[A-Z0-9\[]/, `${ending.id}: paragraph doesn't start with a capital: "${line}"`);
       }
-      const tuple = `${ending.id}|${ending.lines.join('')}`;
+      const fullText = ending.lines.join(' ');
+      const tuple = `${ending.id}|${fullText}`;
       if (!seenTexts.has(tuple)) {
         seenTexts.add(tuple);
         perEnding[ending.id] = (perEnding[ending.id] || 0) + 1;
+        (bodiesByEnding[ending.id] ||= []).push(fullText);
       }
       return;
     }
@@ -88,6 +92,25 @@ run('ghost shift, silence available from any path', ['clinical', 'routine', 'bel
   const total = Object.values(perEnding).reduce((a, b) => a + b, 0);
   assert.equal(Object.keys(perEnding).length, 7, 'expected all 7 endings to be reachable');
   console.log(`ok  ${total} distinct assembled ending texts across 7 endings, all clean:`, perEnding);
+}
+
+// Inverse check: every authored variant string must actually appear in at
+// least one reachable ending body. Without this, a variant can go dead
+// (unreachable given the gating rules) and nothing would ever notice —
+// which is exactly what happened to four strings before this check existed.
+{
+  const uncalled = [];
+  for (const [dim, values] of Object.entries(VARIANTS)) {
+    for (const [value, byEnding] of Object.entries(values)) {
+      for (const [endingId, text] of Object.entries(byEnding)) {
+        const bodies = bodiesByEnding[endingId] || [];
+        const used = bodies.some((body) => body.includes(text));
+        if (!used) uncalled.push(`${dim}.${value}.${endingId}`);
+      }
+    }
+  }
+  assert.deepEqual(uncalled, [], `dead/unreachable variant strings found: ${uncalled.join(', ')}`);
+  console.log('ok  every authored variant string is reachable by at least one real path');
 }
 
 console.log('\nAll archetype, gating, and ending-assembly tests passed.');

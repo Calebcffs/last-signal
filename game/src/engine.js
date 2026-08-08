@@ -12,6 +12,7 @@ export function createInitialState() {
       BOND: null,
       PUSHED_BACK: false,
       INVESTIGATION: 0,
+      COMMIT_READ: false,
       RISK: false,
       CHAIN_ALARMED: false,
     },
@@ -108,7 +109,12 @@ export function resolveVariants(flags) {
   if (flags.RISK) cost = 'costly';
   else if (flags.PUSHED_BACK && flags.INVESTIGATION >= 2) cost = 'isolated';
   else cost = 'trusted';
-  const proof = flags.INVESTIGATION >= 1 ? 'commit' : 'arithmetic';
+  // Keyed to whether the player actually opened the abandoned-draft archive
+  // entry (a choice made right before filing), not to the INVESTIGATION
+  // threshold that gates the ending itself — otherwise every path that
+  // clears the gate would always show the same proof, since the threshold
+  // and the variant would be the same fact twice.
+  const proof = flags.COMMIT_READ ? 'commit' : 'arithmetic';
   return { bond, cost, proof };
 }
 
